@@ -17,7 +17,7 @@ exports.getAllPosts = async (req, res, next) => {
 // @routes /api/v1/user/upload_post
 // Access Private
 exports.uploadPost = (req, res, next) => {
-  const file = req.files.postIma;
+  const file = req.files.postImage;
   const userid = req.userData._id;
   const { desc } = req.body;
 
@@ -70,7 +70,6 @@ exports.updateProfile = async (req, res, next) => {
       return next(new Error("you are not authorize to change this profile"));
     }
  
-    console.log(req.body)
     const updatedPost = await Posts.findOneAndUpdate(
       req.params.userid,
       req.body,

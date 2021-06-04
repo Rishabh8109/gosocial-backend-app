@@ -74,5 +74,7 @@ UserSchema.methods.matchPassword = async function(password){
 }
 
 
+
+
 const userModal  = mongoose.model('auth' , UserSchema);
 module.exports = userModal;
