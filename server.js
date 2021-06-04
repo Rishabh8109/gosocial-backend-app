@@ -10,6 +10,7 @@ const path = require('path');
 
 // @Route files
 const auth = require('./routes/auth');
+const post = require('./routes/Post');
 
 // middlewares
 app.use(express.json());
@@ -18,6 +19,7 @@ app.use(fileUpload());
 
 // mount routes
 app.use('/api/v1/auth' , auth);
+app.use('/api/v1/user' , post);
 
 // Error handling
 app.use(async (req,res,next) => {
@@ -32,7 +34,7 @@ app.use(async (err , req, res, next) => {
      status : err.state || 500,
      message : err.message
    })
-})
+});
 
 
 // load env var
@@ -44,6 +46,7 @@ connectDb();
 // static file
 app.use(express.static(path.join(__dirname , 'public')));
 
+
 // server listning
 const PORT = process.env.PORT || 8080;
 const server = app.listen(PORT, () =>
@@ -53,7 +56,8 @@ const server = app.listen(PORT, () =>
 // Handling unhandled promiss rejection
 process.on("unhandledRejection", (err, promise) => {
   console.log(`Error ${err.message}`.red.bold);
-
+ 
+  
   // close the server & exit process
   server.close(() => process.exit(1));
 });

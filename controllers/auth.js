@@ -22,7 +22,7 @@ exports.register = async (req, res, next) => {
   });
 
   // @set token into cookie
-  setTokeIntoCookie(user, 200, res);
+  setTokenIntoCookie(user, 200, res);
 
   res.status(201).json({
     success: true,
