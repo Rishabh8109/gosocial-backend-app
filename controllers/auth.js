@@ -21,13 +21,9 @@ exports.register = async (req, res, next) => {
     password,
   });
 
+
   // @set token into cookie
   setTokenIntoCookie(user, 200, res);
-
-  res.status(201).json({
-    success: true,
-    data: user,
-  });
 };
 
 // @dec  create user account
@@ -44,7 +40,7 @@ exports.login = async (req, res, next) => {
 
   // Check user emaii exists
   if (!user) {
-    return next(new Error("Invalid credatial & email not found", 401));
+    return next(new Error("Invalid credatial & email not found"));
   }
 
   const matchPassword = await user.matchPassword(password);

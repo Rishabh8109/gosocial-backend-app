@@ -4,7 +4,11 @@ const User = require("../modals/User");
 // @routes /api/v1/auth/getUserData
 // @Acess PRIVATE
 exports.getUserProfile = async (req, res, next) => {
-  const userData = req.userData;
+  const {_id} = req.userData;
+  const userData = await User.findById(_id).populate({
+    path : 'Posts',
+    select : 'postImage , userid , likes , comments'
+  });
   res.status(200).json({
     success: true,
     data: userData,

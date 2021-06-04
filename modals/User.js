@@ -41,6 +41,10 @@ const UserSchema = Schema({
         type : String,
         default :""
     },
+    posts : {
+        type : [mongoose.Schema.Types.ObjectId],
+        ref : 'Posts',
+    },
     coverPhoto : {
        type : String,
        default : ""
@@ -51,7 +55,10 @@ const UserSchema = Schema({
 		type: Date,
 		default: Date.now,
 	},
-});
+},{
+    toJSON : {virtuals : true},
+    toObject : {virtuals : true}
+  });
 
 
 // @Encrypt password using bcrypt
@@ -73,7 +80,13 @@ UserSchema.methods.matchPassword = async function(password){
   return await bcrypt.compare(password, this.password);
 }
 
-
+// Revers populating with virtuals
+UserSchema.virtual('Posts' , {
+    ref: 'Posts', // The model to use
+    localField: 'posts', // Find people where `localField`
+    foreignField: '_id', // is equal to `foreignField`,
+    justOne: false,
+});
 
 
 const userModal  = mongoose.model('auth' , UserSchema);

@@ -11,8 +11,11 @@ const PostSchema = Schema({
        default : ""
    },
    likes : {
-       type : Number,
-       default : 0
+      users : [mongoose.Schema.Types.ObjectId],
+      count : {
+          type : Number,
+          default : 0
+      }
    },
    comments : [
      {
@@ -39,7 +42,8 @@ const PostSchema = Schema({
        default : "",
     },
     userid : {
-        type : mongoose.Schema.Types.ObjectId
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'auth'
     },
     createdAt : {
         type : Date,
