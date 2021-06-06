@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const UserSchema = Schema({
     username: {
@@ -63,6 +64,9 @@ const UserSchema = Schema({
 
 // @Encrypt password using bcrypt
 UserSchema.pre('save' , async function(next){
+    if(!this.isModified('password')){
+        next();
+    }
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
     next();
@@ -73,6 +77,22 @@ UserSchema.methods.getSignInWithToken =  function(){
   return  jwt.sign({_id : this._id} , process.env.SECRET_KEY , {
       expiresIn : '1h'
   });
+}
+
+
+// Generate & Hash token genrate
+UserSchema.methods.getForgotPasswordToken = async function(){
+
+	// @Generate Token
+	const resetToken = crypto.randomBytes(20).toString('hex');
+
+	// @Hash token and set it to resetPasswordToken
+	this.resetpasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+	// Token expiration
+	this.resetpasswordExp = new Date() + 10 * 60 * 1000;
+
+	return resetToken;
 }
 
 // @password compare

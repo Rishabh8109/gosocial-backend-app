@@ -148,3 +148,35 @@ exports.userLike = async (req, res, next) => {
     next(new Error(error));
   }
 };
+
+
+
+// @user comment system 
+// @Route /api/v1/user/:PostId/comment
+// @ACCES PRIVATE
+
+exports.userComments = async (req,res,next) => {
+    const postId = req.params.postId;
+    const userId = req.userData._id;
+    
+    // update req.body
+    req.body.user = userId
+    // find the post document
+    var query = {_id : postId}
+
+    // push comments on post 
+    var conditions =  { "$push" : {comments : req.body}}
+
+    // get updated post
+    const action =  {
+      new : true,
+      runValidators : true
+    }
+    
+   const updatedPost = await Posts.findOneAndUpdate(query , conditions, action);
+
+   res.status(200).json({
+     success: true,
+     data : updatedPost
+   })
+}

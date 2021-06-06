@@ -1,5 +1,7 @@
 const Auth = require("../modals/User");
 const path = require("path");
+const sendMail = require('../utils/sendMail')
+const crypto = require("crypto");
 
 // @dec  create user account
 // @routes /api/v1/auth/regiser
@@ -124,3 +126,71 @@ exports.profilePictureUpload = async (req, res, next) => {
     });
   });
 };
+
+exports.forgotPassword = async (req,res,next)  => {
+
+  const user = await Auth.findOne({email : req.body.email});
+
+  if(!user){
+    return next(new Error('There is no user found with this email!'));
+  }
+
+  const resetToken = await user.getForgotPasswordToken();
+
+  // Create reset url
+	const resetUrl = `${req.protocol}://${req.get(
+		"host"
+	)}/api/v1/auth/resetPassword/${resetToken}`;
+
+	const message = `You are receiving this email because or (someone else) has requested to reset password. Please make a PUT request to : \n\n ${resetUrl}`;
+   
+  try {
+    await user.save({ validateBeforeSave : false});
+
+    await sendMail({
+      email : user.email,
+      subject : 'Password reset token',
+      message : message
+    });
+
+    res.status(200).json({
+      success : true,
+      message : 'Email sent!'
+    })
+  } 
+    catch (error) {
+      user.resetpasswordToken = undefined;
+		  user.resetpasswordExp = undefined;
+      await user.save({ validateBeforeSave : false});
+		  return next(new Error("Email could not be send"));
+  }
+
+}
+
+exports.resetPassword = async (req,res,next) => {
+  try {
+    const resetpasswordToken = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
+   
+    const user = await Auth.findOne({
+      resetpasswordToken : resetpasswordToken
+    });
+ 
+    if(!user) {
+     next(new Error(`User not found!`));
+    }
+ 
+    user.password = req.body.password;
+    user.resetpasswordToken = undefined;
+    user.resetpasswordExp = undefined;
+ 
+    await user.save();
+    
+    res.status(200).json({
+      sucess: true,
+      message : 'password successfully updated'
+    })
+  } catch (error) {
+    next(new Error(error))
+  }
+   
+}
