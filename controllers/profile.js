@@ -1,5 +1,20 @@
 const User = require("../modals/User");
 
+// @desc GET user users content
+// @routes /api/v1/auth/users
+// @Acess PUBLIC
+
+exports.getUsers = async (req, res, next) => {
+  const userData = await User.find({}).select('username profilePicture posts');
+
+  res.status(200).json({
+    success: true,
+    data: userData,
+  });
+
+};
+
+
 // @desc GET user profile content
 // @routes /api/v1/auth/getUserData
 // @Acess PRIVATE
@@ -41,11 +56,12 @@ exports.following = async (req, res, next) => {
       { _id: userid },
       {
         $push: { followers: followerData },
+        $inc : {followerCount : 1} 
       },
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     // Update $following field whose followed
@@ -53,11 +69,12 @@ exports.following = async (req, res, next) => {
       { _id: followerUserId },
       {
         $push: { following: followingData },
+        $inc : {followingCount : 1} 
       },
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     res.status(200).json({

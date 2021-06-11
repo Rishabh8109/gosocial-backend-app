@@ -6,7 +6,11 @@ const path = require("path");
 // @route /api/v1/getAllPosts
 // @Acees Private
 exports.getAllPosts = async (req, res, next) => {
-  const posts = await Posts.find({}).populate("auth");
+  const posts = await Posts.find({}).populate({
+    path : 'auth',
+    select : 'username profilePicture posts'
+    
+  })
   res.status(200).json({
     success: true,
     data: posts,
@@ -17,9 +21,10 @@ exports.getAllPosts = async (req, res, next) => {
 // @routes /api/v1/user/upload_post
 // Access Private
 exports.uploadPost = (req, res, next) => {
-  const file = req.files.postImage;
+  const file = req.files.file;
   const userid = req.userData._id;
-  const { desc, lives, from } = req.body;
+  const { desc} = req.body;
+  
 
   // Make sure file is image
   if (!file.mimetype.startsWith("image")) {
@@ -40,14 +45,16 @@ exports.uploadPost = (req, res, next) => {
     if (err) {
       next(new Error("Problem with photo"));
     }
+   
 
+    // find user who created Post 
+    //  const user = await User.findById(userid);
+ 
     // @update profile picture and cover photo
     const createPost = await new Posts({
-      postImage: file.name,
+      postImage: `${req.protocol}://${req.get('host')}/uploads/${file.name}`,
       userid: userid,
       description: desc,
-      lives: lives,
-      from: from,
     });
 
     const data = await createPost.save();
@@ -143,6 +150,7 @@ exports.userLike = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Post successfuly updated",
+      isLiked : true
     });
   } catch (error) {
     next(new Error(error));
@@ -159,8 +167,10 @@ exports.userComments = async (req,res,next) => {
     const postId = req.params.postId;
     const userId = req.userData._id;
     
+    const user = await User.findOne({_id : userId}).select('_id profilePicture username');
+  
     // update req.body
-    req.body.user = userId
+    req.body.user = user;
     // find the post document
     var query = {_id : postId}
 

@@ -1,61 +1,73 @@
 const Auth = require("../modals/User");
 const path = require("path");
-const sendMail = require('../utils/sendMail')
+const sendMail = require("../utils/sendMail");
 const crypto = require("crypto");
 
 // @dec  create user account
 // @routes /api/v1/auth/regiser
 // Access PUBLIC
 exports.register = async (req, res, next) => {
-  const { username, email, password } = req.body;
+  try {
+    const { username, email, password, conformPassword } = req.body;
 
-  // @check if email already exits
-  const isEmailExist = await Auth.findOne({ email: email });
+    if (!username || !email || !password || !conformPassword) {
+      next(new Error("Please fill the required field.."));
+    }
 
-  if (isEmailExist) {
-    next(new Error("Email already exists"));
+    // @check if email already exits
+    const isEmailExist = await Auth.findOne({ email: email });
+
+    if (isEmailExist) {
+      next(new Error("Email already exists"));
+    }
+
+    // @create user
+    const user = await Auth.create({
+      username,
+      email,
+      password,
+      conformPassword,
+    });
+
+    // @set token into cookie
+    setTokenIntoCookie(user, 200, res, "Registered successfully");
+  } catch (error) {
+    next(new Error(error.name));
   }
-
-  // @create user
-  const user = await Auth.create({
-    username,
-    email,
-    password,
-  });
-
-
-  // @set token into cookie
-  setTokenIntoCookie(user, 200, res);
 };
 
 // @dec  create user account
 // @routes /api/v1/auth/login
 // Access PUBLIC
 exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (!email || !password) {
-    next(new Error("Please provide a email and password"));
+    if (!email || !password) {
+      next(new Error("Please provide a email and password"));
+    }
+
+    const user = await Auth.findOne({ email: email }).select("+password");
+
+    // Check user emaii exists
+    if (!user) {
+      return next(new Error("Invalid credatial & email not found"));
+    }
+
+    const matchPassword = await user.matchPassword(password);
+
+    if (!matchPassword) {
+      return next(new Error("Invalid credential"));
+    }
+
+    setTokenIntoCookie(user, 200, res, "");
+  } catch (error) {
+    next(new Error(error));
   }
-
-  const user = await Auth.findOne({ email: email }).select("+password");
-
-  // Check user emaii exists
-  if (!user) {
-    return next(new Error("Invalid credatial & email not found"));
-  }
-
-  const matchPassword = await user.matchPassword(password);
-
-  if (!matchPassword) {
-    return next(new Error("Invalid credential"));
-  }
-
-  setTokenIntoCookie(user, 200, res);
 };
 
 // Set toke into cookie
-function setTokenIntoCookie(user, statusCode, res) {
+function setTokenIntoCookie(user, statusCode, res, msg) {
   const token = user.getSignInWithToken();
 
   const options = {
@@ -71,6 +83,7 @@ function setTokenIntoCookie(user, statusCode, res) {
   res.status(statusCode).cookie("token", token, options).json({
     success: true,
     token: token,
+    message: msg,
   });
 }
 
@@ -127,70 +140,73 @@ exports.profilePictureUpload = async (req, res, next) => {
   });
 };
 
-exports.forgotPassword = async (req,res,next)  => {
 
-  const user = await Auth.findOne({email : req.body.email});
 
-  if(!user){
-    return next(new Error('There is no user found with this email!'));
+exports.forgotPassword = async (req, res, next) => {
+  const user = await Auth.findOne({ email: req.body.email });
+
+  if (!user) {
+    return next(new Error("There is no user found with this email!"));
   }
 
   const resetToken = await user.getForgotPasswordToken();
 
   // Create reset url
-	const resetUrl = `${req.protocol}://${req.get(
-		"host"
-	)}/api/v1/auth/resetPassword/${resetToken}`;
+  const resetUrl = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/auth/resetPassword/${resetToken}`;
 
-	const message = `You are receiving this email because or (someone else) has requested to reset password. Please make a PUT request to : \n\n ${resetUrl}`;
-   
+  const message = `You are receiving this email because or (someone else) has requested to reset password. Please make a PUT request to : \n\n ${resetUrl}`;
+
   try {
-    await user.save({ validateBeforeSave : false});
+    await user.save({ validateBeforeSave: false });
 
     await sendMail({
-      email : user.email,
-      subject : 'Password reset token',
-      message : message
+      email: user.email,
+      subject: "Password reset token",
+      message: message,
     });
 
     res.status(200).json({
-      success : true,
-      message : 'Email sent!'
-    })
-  } 
-    catch (error) {
-      user.resetpasswordToken = undefined;
-		  user.resetpasswordExp = undefined;
-      await user.save({ validateBeforeSave : false});
-		  return next(new Error("Email could not be send"));
-  }
-
-}
-
-exports.resetPassword = async (req,res,next) => {
-  try {
-    const resetpasswordToken = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
-   
-    const user = await Auth.findOne({
-      resetpasswordToken : resetpasswordToken
+      success: true,
+      message: "Email sent!",
     });
- 
-    if(!user) {
-     next(new Error(`User not found!`));
+  } catch (error) {
+    user.resetpasswordToken = undefined;
+    user.resetpasswordExp = undefined;
+    await user.save({ validateBeforeSave: false });
+    return next(new Error("Email could not be send"));
+  }
+};
+
+
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const resetpasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resetToken)
+      .digest("hex");
+
+    const user = await Auth.findOne({
+      resetpasswordToken: resetpasswordToken,
+    });
+
+    if (!user) {
+      next(new Error(`User not found!`));
     }
- 
+
     user.password = req.body.password;
     user.resetpasswordToken = undefined;
     user.resetpasswordExp = undefined;
- 
+
     await user.save();
-    
+
     res.status(200).json({
       sucess: true,
-      message : 'password successfully updated'
-    })
+      message: "password successfully updated",
+    });
   } catch (error) {
-    next(new Error(error))
+    next(new Error(error));
   }
-   
-}
+};

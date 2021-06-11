@@ -7,6 +7,10 @@ const morgan = require("morgan");
 const fileUpload = require('express-fileupload');
 const createError  = require('http-errors');
 const path = require('path');
+const cors = require('cors');
+
+// static file
+app.use(express.static(path.join(__dirname + '/public')));
 
 // @Route files
 const auth = require('./routes/auth');
@@ -16,6 +20,7 @@ const post = require('./routes/Post');
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(fileUpload());
+app.use(cors());
 
 // mount routes
 app.use('/api/v1/auth' , auth);
@@ -31,7 +36,7 @@ app.use(async (req,res,next) => {
 app.use(async (err , req, res, next) => {
    res.status(err.status || 500);
    res.send({
-     status : err.state || 500,
+     status : err.status || 500,
      message : err.message
    })
 });
@@ -42,10 +47,6 @@ Dotenv.config({ path: "config/.env" });
 
 // conect to databse
 connectDb();
-
-// static file
-app.use(express.static(path.join(__dirname , 'public')));
-
 
 // server listning
 const PORT = process.env.PORT || 8080;

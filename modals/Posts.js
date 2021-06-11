@@ -20,28 +20,20 @@ const PostSchema = Schema({
    comments : [
      {
         user:{
-            type :  mongoose.Schema.Types.ObjectId,
-            ref : 'auth',
+            type : Object,
+            default : []
          },
          text : {
              type : String,
              default: ""
+         },
+         createdAt : {
+             type : Date,
+             default : Date.now
          }
      }
    ],
-    lives : {
-        type : String,
-        default : "",
-    },
-    from : {
-        type : String,
-        default : "",
-    },
-    relationship : {
-       type : String,
-       default : "",
-    },
-    userid : {
+  userid : {
         type : mongoose.Schema.Types.ObjectId,
         ref : 'auth'
     },
@@ -49,7 +41,19 @@ const PostSchema = Schema({
         type : Date,
         default : Date.now
     } 
+},{
+    toJSON : {virtuals : true},
+    toObject : {virtuals : true}
+  });
+
+  // Revers populating with virtuals
+PostSchema.virtual('auth' , {
+    ref: 'auth', // The model to use
+    localField: "userid", // Find people where `localField`
+    foreignField: '_id', // is equal to `foreignField`,
+    justOne: false,
 });
+
 
 
 const Posts =  mongoose.model('Posts' , PostSchema);

@@ -4,12 +4,14 @@ const {
   profilePictureUpload,
   login,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  
 } = require("../controllers/auth");
 const {
   getUserProfile,
   following,
   unfollow,
+  getUsers
 } = require("../controllers/profile");
 const { isAuthenticated } = require("../middlewares/isAuthorized");
 const router = express.Router();
@@ -18,6 +20,7 @@ const router = express.Router();
 router.route("/register").post(register);
 router.route("/login").post(login);
 router.route("/:userid/upload").post(profilePictureUpload);
+router.route("/users").get(isAuthenticated ,getUsers);
 router.route("/profile").get(isAuthenticated, getUserProfile);
 router.route("/:userid/following").post(isAuthenticated, following);
 router.route("/:userid/unfollow").post(isAuthenticated, unfollow);

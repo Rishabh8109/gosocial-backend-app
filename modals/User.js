@@ -13,7 +13,13 @@ const UserSchema = Schema({
     },
     password : {
         type : String,
-        minLength : [6 , 'Password lenth must be 6'],
+        minLength : [6 , 'Password length must be 6'],
+        required : [true , "Please enter the password"],
+        select : false
+    },
+    conformPassword : {
+        type : String,
+        minLength : [6 , 'Password length must be 6'],
         required : [true , "Please enter the password"],
         select : false
     },
@@ -34,6 +40,14 @@ const UserSchema = Schema({
         type : Array,
         default : []
     },
+    followerCount : {
+        type : Number,
+        default : 0
+    }, 
+    followingCount : {
+        type : Number,
+        default : 0
+    }, 
     privateAccount : {
         type : Boolean,
         default : false
@@ -49,6 +63,18 @@ const UserSchema = Schema({
     coverPhoto : {
        type : String,
        default : ""
+    },
+    lives : {
+        type : String,
+        default : "",
+    },
+    from : {
+        type : String,
+        default : "",
+    },
+    relationship : {
+       type : String,
+       default : "",
     },
     resetpasswordToken: String,
 	resetpasswordExp: Date,
@@ -67,10 +93,18 @@ UserSchema.pre('save' , async function(next){
     if(!this.isModified('password')){
         next();
     }
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+     
+    if(this.password !== this.conformPassword){
+      next(new Error('password does not match'))
+    } else {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        this.conformPassword = await bcrypt.hash(this.conformPassword, salt);
+    }
     next();
 });
+
+
 
 // @Generate token
 UserSchema.methods.getSignInWithToken =  function(){
@@ -109,5 +143,5 @@ UserSchema.virtual('Posts' , {
 });
 
 
-const userModal  = mongoose.model('auth' , UserSchema);
-module.exports = userModal;
+const auth  = mongoose.model('auth' , UserSchema);
+module.exports = auth;
