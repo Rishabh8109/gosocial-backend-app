@@ -21,6 +21,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(fileUpload());
 app.use(cors());
+
 // mount routes
 app.use('/api/v1/auth' , auth);
 app.use('/api/v1/user' , post);

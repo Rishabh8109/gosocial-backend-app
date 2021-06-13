@@ -65,6 +65,7 @@ exports.login = async (req, res, next) => {
 
     setTokenIntoCookie(user, 200, res, "");
   } catch (error) {
+    res.status(500);
     next(new Error(error));
   }
 };

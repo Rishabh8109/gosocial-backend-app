@@ -3,15 +3,14 @@ const User = require("../modals/User");
 // @desc GET user users content
 // @routes /api/v1/auth/users
 // @Acess PUBLIC
-
 exports.getUsers = async (req, res, next) => {
-  const userData = await User.find({}).select("username profilePicture posts");
-
+  const userData = await User.find({})
   res.status(200).json({
     success: true,
     data: userData,
   });
 };
+
 
 // @desc GET user profile content
 // @routes /api/v1/auth/getUserData
@@ -20,13 +19,37 @@ exports.getUserProfile = async (req, res, next) => {
   const { _id } = req.userData;
   const userData = await User.findById(_id).populate({
     path: "Posts",
-    select: "postImage , userid , likes , comments",
+    select: "postImage , userid , likes , comments description",
   });
   res.status(200).json({
     success: true,
     data: userData,
   });
 };
+
+//desc POST  user profile update
+
+exports.update_user_profile = async (req,res,next) => {
+    const userid = req.userData._id;
+
+    try {
+        await User.findOneAndUpdate(
+          {_id : userid},
+          req.body,
+          {
+            new : true,
+            runValidators : true
+          }
+        );
+        res.status(200).json({
+          success : true,
+          message : 'profile successfully updated'
+        })
+    } catch (error) {
+      next(new Error(error))
+    }
+     
+}
 
 // @desc follow
 // @routes /api/v1/auth/following

@@ -8,17 +8,18 @@ const { v4: uuidv4 } = require("uuid");
 // @Acees Private
 exports.getAllPosts = async (req, res, next) => {
    try {
-        const posts = await Posts.find({})
+        const posts = await Posts.find({}).sort({createdAt : -1})
         .populate({
           path: "auth",
           select: "username profilePicture posts",
-        })
-        .sort({ createdAt: -1 });
+        });
+
       res.status(200).json({
         success: true,
         data: posts,
       });
-   } catch (error) {
+   } catch(error) {
+     res.status(500);
      next(new Error(error))
    }
 };
@@ -73,7 +74,7 @@ exports.uploadPost = (req, res, next) => {
         new: true,
         runValidators: true,
       }
-    );
+    ).sort({createdAt : -1});
 
     res.status(200).json({
       success: true,
@@ -184,7 +185,7 @@ exports.deletePost = async (req, res, next) => {
         success: true,
         message: "post updated",
       });
-      
+
     }
   } catch (error) {
      next(new Error(error))
