@@ -9,7 +9,7 @@ const {
 } = require("../controllers/auth");
 const {
   getUserProfile,
-  following,
+  follow,
   unfollow,
   getUsers
 } = require("../controllers/profile");
@@ -20,9 +20,9 @@ const router = express.Router();
 router.route("/register").post(register);
 router.route("/login").post(login);
 router.route("/:userid/upload").post(profilePictureUpload);
-router.route("/users").get(isAuthenticated ,getUsers);
+router.route("/users").get(getUsers);
 router.route("/profile").get(isAuthenticated, getUserProfile);
-router.route("/:userid/following").post(isAuthenticated, following);
+router.route("/:userid/follow").post(isAuthenticated, follow);
 router.route("/:userid/unfollow").post(isAuthenticated, unfollow);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:resetToken").post(resetPassword);

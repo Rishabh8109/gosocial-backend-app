@@ -2,6 +2,7 @@ const Auth = require("../modals/User");
 const path = require("path");
 const sendMail = require("../utils/sendMail");
 const crypto = require("crypto");
+const { v4: uuidv4 } = require('uuid');
 
 // @dec  create user account
 // @routes /api/v1/auth/regiser
@@ -19,18 +20,20 @@ exports.register = async (req, res, next) => {
 
     if (isEmailExist) {
       next(new Error("Email already exists"));
+    } else {
+       // @create user
+        const user = await Auth.create({
+          username,
+          email,
+          password,
+          conformPassword,
+        });
+
+        // @set token into cookie
+        setTokenIntoCookie(user, 200, res, "Registered successfully");
     }
 
-    // @create user
-    const user = await Auth.create({
-      username,
-      email,
-      password,
-      conformPassword,
-    });
-
-    // @set token into cookie
-    setTokenIntoCookie(user, 200, res, "Registered successfully");
+   
   } catch (error) {
     next(new Error(error.name));
   }
@@ -84,6 +87,7 @@ function setTokenIntoCookie(user, statusCode, res, msg) {
     success: true,
     token: token,
     message: msg,
+    time : Date.now()
   });
 }
 
@@ -117,7 +121,7 @@ exports.profilePictureUpload = async (req, res, next) => {
   }
 
   // coustom file name
-  file.name = `photo_${req.params.userid}${path.parse(file.name).ext}`;
+  file.name = `photo_${uuidv4()}${path.parse(file.name).ext}`;
 
   file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
     if (err) {
@@ -128,7 +132,7 @@ exports.profilePictureUpload = async (req, res, next) => {
     let action = {};
 
     //set dynamic image type
-    action[req.query.imageType] = file.name;
+    action[req.query.imageType] = `${req.protocol}://${req.get('host')}/uploads/${file.name}`;
 
     // @update profile picture and cover photo
     await Auth.findByIdAndUpdate(req.params.userid, action);
